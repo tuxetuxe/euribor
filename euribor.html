@@ -1,0 +1,158 @@
+<html>
+	<head>
+
+		<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.min.css" rel="stylesheet">
+
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script src="http://jquery-csv.googlecode.com/git/src/jquery.csv.js"></script>
+		<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+		<script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+
+		<script>
+			google.load('visualization', '1.0', {
+				'packages' : ['corechart']
+			});
+			function httpGet(theUrl) {
+				var xmlHttp = null;
+
+				xmlHttp = new XMLHttpRequest();
+				xmlHttp.open("GET", theUrl, false);
+				xmlHttp.send(null);
+				return xmlHttp.responseText;
+			}
+
+			function getParameterByName(name) {
+				name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+				var regexS = "[\\?&]" + name + "=([^&#]*)";
+				var regex = new RegExp(regexS);
+				var results = regex.exec(window.location.search);
+				if (results == null)
+					return null;
+				else
+					return decodeURIComponent(results[1].replace(/\+/g, " "));
+			}
+
+			function drawChart(chart,chartData){
+				chart.draw(chartData, {
+						title : 'Euribor 3m & 6m',
+						legend : {
+							position : 'bottom'
+						},
+						tooltip : {
+							showColorCode : true
+						},
+						hAxis : {
+							format : 'dd-MM-yyyy'
+						},
+						curveType : "function",
+						width : 1200,
+						height : 600,
+						backgroundColor : 'transparent',
+						chartArea : {
+							left : 35,
+							top : 35,
+							width : 1024,
+							height : 500
+						}
+					});
+			}
+
+			$(document).ready(function() {
+				$(window).load(function() {
+
+					var target = getParameterByName('target');
+					var initialDate = new Date(1999,0,1);
+					var daysToToday = parseInt( (new Date().getTime() - initialDate.getTime()) /(24*3600*1000) );
+					
+					var chartData = new google.visualization.DataTable();
+					chartData.addColumn('date', 'Date');
+					chartData.addColumn('number', 'Euribor 3m');
+					chartData.addColumn('number', 'Euribor 6m');
+					if (target != null) {
+						chartData.addColumn('number', 'Target');
+					}
+					
+					for (var i = 0; i <= daysToToday; i++) {
+						var itemDate = new Date(1999,0,1);
+						itemDate.setDate( initialDate.getDate() + i );
+						var itemDay =  itemDate.getDay();
+						if( itemDay == 0 || itemDay == 6 ){
+							continue;
+						}
+						if (target != null) {
+							chartData.addRow( [itemDate, 0, 0, target * 1]);
+						}else {
+							chartData.addRow( [itemDate, 0, 0 ]);
+						}
+					}
+					
+					var chart = new google.visualization.LineChart(document.getElementById('graph3M'));
+					drawChart(chart,chartData);
+
+					var euribor3mURL = "http://www.banque-france.fr/fileadmin/user_upload/banque_de_france/Economie_et_Statistiques/Changes_et_Taux/qs.d.ieutio3m.csv";
+					var euribor6mURL = "http://www.banque-france.fr/fileadmin/user_upload/banque_de_france/Economie_et_Statistiques/Changes_et_Taux/qs.d.ieutio6m.csv";
+					$.get(euribor3mURL, function(fileContents) {
+						processCSV( fileContents , 1 );
+					});
+					$.get(euribor6mURL, function(fileContents) {
+						processCSV( fileContents , 2 );
+					});
+					
+					function processCSV(fileContents,cellIdx){
+						var csvValues = $.csv.toArrays(fileContents, {
+							separator : ';',
+							headers : false
+						});
+						csvValues = csvValues.slice(8)
+
+						for (var i = 0; i < csvValues.length; i++) {
+							var dr = csvValues[i];
+
+							chartData.setCell(i, cellIdx, (dr[1].replace(',', '.') ) * 1);
+						}
+						drawChart(chart,chartData);
+					}
+
+				});
+			});
+		</script>
+
+		<style>
+			body {
+				padding-top: 20px;
+				padding-left: 20px;
+				padding-bottom: 40px;
+				background-color: #f5f5f5;
+			}
+
+			.box {
+				background-color: #fff;
+				border: 1px solid #e5e5e5;
+				-webkit-border-radius: 5px;
+				-moz-border-radius: 5px;
+				border-radius: 5px;
+				-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+				-moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+				box-shadow: 0 1px 2px rgba(0,0,0,.05);
+			}
+
+		</style>
+		<body>
+			<div class="row">
+				<div class="span2 well box">
+					<form method="get" class="form-horizontal">
+						<label>Target value:</label>
+						<input name="target" type="text" class="input" style="width: 100%">
+						<button type="submit" class="btn btn-small btn-success" style="width: 100%">
+							Plot!
+						</button>
+					</form>
+				</div>
+				<div class="span11 box">
+					<div id="graph3M"></div>
+				</div>
+			</div>
+		</body>
+	</head>
+
+</html>
