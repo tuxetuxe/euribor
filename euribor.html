@@ -3,8 +3,8 @@
 
 		<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.min.css" rel="stylesheet">
 
-		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-		<script src="http://jquery-csv.googlecode.com/git/src/jquery.csv.js"></script>
+		<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script type="text/javascript" src="http://jquery-csv.googlecode.com/git/src/jquery.csv.js"></script>
 		<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
 		<script>
@@ -51,7 +51,7 @@
 			$(document).ready(function() {
 				$(window).load(function() {
 
-					var target = getParameterByName('target');
+					var target = Number( getParameterByName('target') );
 					var initialDate = new Date(1999,0,1);
 					var daysToToday = parseInt( (new Date().getTime() - initialDate.getTime()) /(24*3600*1000) );
 					
@@ -59,6 +59,7 @@
 					chartData.addColumn('date', 'Date');
 					chartData.addColumn('number', 'Euribor 3m');
 					chartData.addColumn('number', 'Euribor 6m');
+					//if there is a target value, plot it
 					if (target != null) {
 						chartData.addColumn('number', 'Target');
 					}
@@ -71,13 +72,14 @@
 							continue;
 						}
 						if (target != null) {
-							chartData.addRow( [itemDate, 0, 0, target * 1]);
+							chartData.addRow( [itemDate, 0, 0, target]);
 						}else {
 							chartData.addRow( [itemDate, 0, 0 ]);
 						}
 					}
 					
 					var chart = new google.visualization.LineChart(document.getElementById('graph3M'));
+					
 					drawChart(chart,chartData);
 
 					var euribor3mURL = "http://www.banque-france.fr/fileadmin/user_upload/banque_de_france/Economie_et_Statistiques/Changes_et_Taux/qs.d.ieutio3m.csv";
